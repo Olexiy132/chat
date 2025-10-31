@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Twitch Chat - bubl0nok</title>
+  <script src="https://unpkg.com/tmi.js@1.8.5/dist/tmi.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      background-color: rgba(26,26,26,0.95);
+      font-family: "Poppins", sans-serif;
+      font-size: 15px;
+      color: #fff;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      position: relative;
+    }
+
+    /* фон з бубликами 🍩 */
+    body::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: url("https://files.oaiusercontent.com/file_00000000d4c861f4bf35d7ff19d04377");
+      background-size: 180px;
+      background-repeat: repeat;
+      opacity: 0.1;
+      z-index: 0;
+    }
+
+    #chat {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      height: 100%;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+
+    .message {
+      display: flex;
+      align-items: flex-start;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      margin: 6px 0;
+      padding: 8px 12px;
+      animation: fadeIn 0.3s ease-in;
+      opacity: 1;
+      transition: opacity 0.4s ease-out;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+
+    .content {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .name {
+      font-weight: 600;
+      text-decoration: underline;
+      color: #f5f5f5;
+      margin-bottom: 3px;
+    }
+
+    .text {
+      color: #eaeaea;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div id="chat"></div>
+
+  <script>
+    const client = new tmi.Client({
+      channels: ['bubl0nok']
+    });
+
+    client.connect();
+
+    const chatContainer = document.getElementById('chat');
+    const maxMessages = 5;
+
+    async function getUserAvatar(username) {
+      try {
+        const res = await fetch(`https://decapi.me/twitch/avatar/${username}`);
+        return await res.text();
+      } catch {
+        return "https://static-cdn.jtvnw.net/jtv_user_pictures/xarth/404_user_70x70.png";
+      }
+    }
+
+    client.on('message', async (channel, tags, message, self) => {
+      const msgDiv = document.createElement('div');
+      msgDiv.classList.add('message');
+
+      const avatarUrl = await getUserAvatar(tags.username);
+      const avatar = document.createElement('img');
+      avatar.classList.add('avatar');
+      avatar.src = avatarUrl;
+
+      const contentDiv = document.createElement('div');
+      contentDiv.classList.add('content');
+
+      const name = document.createElement('div');
+      name.classList.add('name');
+      name.textContent = tags['display-name'] || tags.username;
+
+      const text = document.createElement('div');
+      text.classList.add('text');
+      text.innerHTML = message;
+
+      contentDiv.appendChild(name);
+      contentDiv.appendChild(text);
+
+      msgDiv.appendChild(avatar);
+      msgDiv.appendChild(contentDiv);
+
+      chatContainer.appendChild(msgDiv);
+
+      // Обмежуємо кількість повідомлень
+      if (chatContainer.children.length > maxMessages) {
+        chatContainer.removeChild(chatContainer.firstChild);
+      }
+
+      // Автоматичне прокручування вниз
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    });
+  </script>
+</body>
+</html>
